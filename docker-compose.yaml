@@ -1,0 +1,76 @@
+version: "3.8"
+
+networks:
+  tickitz-network:
+    name: tickitz-network
+    driver: bridge
+
+volumes:
+  tickitz-db-volume:
+    name: tickitz-db-volume
+
+services:
+  tickitz-db:
+    container_name: tickitz-db
+    image: mysql:8
+    ports:
+      - protocol: tcp
+        published: 3306
+        target: 3306
+    networks:
+      - tickitz-network
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: tickitz
+    restart: on-failure
+    command: --default-authentication-plugin=mysql_native_password
+    deploy:
+      resources:
+        reservations:
+          cpus: "0.5"
+          memory: 500M
+        limits:
+          cpus: "1"
+          memory: 1024M
+    volumes:
+      - type: volume
+        source: tickitz-db-volume
+        target: /var/lib/mysql
+  tickitz-backend:
+    container_name: tickitz-backend
+    image: tickitz:1.0.0
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    networks:
+      - tickitz-network
+    deploy:
+      resources:
+        reservations:
+          cpus: "0.5"
+          memory: 500M
+        limits:
+          cpus: "1"
+          memory: 1024M
+    environment:
+      PORT: 9000
+      APP_URL: http://localhost:9000/api
+      URL: http://localhost:9000
+      DB_HOST: tickitz-db
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: tickitz
+      SECRET: rahasia
+      EMAIL: tickitz.unsia.2024@gmail.com 
+      EMAIL_PASSWORD: "xuog fvma kiuc wqkm"
+      EMAIL_SERVICE: gmail
+      EMAIL_HOST: smtp.gmail.com 
+      REACT_APP_URL: http://localhost:3000
+      REACT_APP_SECRET: rahasia
+    restart: on-failure
+    depends_on:
+      - tickitz-db
+    ports:
+      - protocol: tcp
+        target: 9000
+        published: 9000
